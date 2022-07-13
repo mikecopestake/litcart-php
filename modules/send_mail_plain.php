@@ -10,49 +10,13 @@ return function ($to, $subject, $message): bool {
             return mail($to, $subject, $message, implode("\r\n",$headers));
         };
     } else if ( SMTP == "smtp" ) {
-        //Load Composer's autoloader
-        require_once('../vendor/autoload.php');
-
-        use PHPMailer\PHPMailer\PHPMailer;
-        use PHPMailer\PHPMailer\Exception;
-
-        require '../vendor/PHPMailer/src/Exception.php';
-        require '../vendor/PHPMailer/src/PHPMailer.php';
-        require '../vendor/PHPMailer/src/SMTP.php';
-
-        $mail = new PHPMailer;
-
-        //Server settings
-        if ( SMTP_DEBUG) {
-            $mail->SMTPDebug = SMTP::DEBUG_SERVER;              // Enable verbose debug output
-        }
-        $mail->Host       = SMTP_HOST;                          //Set the SMTP server to send through
-        $mail->SMTPAuth   = true;                               //Enable SMTP authentication
-        $mail->Username   = SMTP_USERNAME;                      //SMTP username
-        $mail->Password   = SMTP_PASSWORD;                      //SMTP password
-        if ( SMTP_ENCRYPTION == "ssl" ) {
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;    //Enable implicit TLS encryption
-        } else if ( SMTP_ENCRYPTION == "tls") {
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; //Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
-        }
-        $mail->Port       = SMTP_PORT;                          //TCP port to connect to
-
-        //Recipients
-        $mail->setFrom(EMAIL_ADDRESS_FROM, CONGREGATION_NAME . ' - ' . APPLICATION_NAME);
-        $mail->addAddress($to);
-        $mail->addReplyTo(EMAIL_ADDRESS_REPLY, TEAM_NAME);
-        $mail->addBCC(EMAIL_ADDRESS_BCC);
-        
-        //Content
-        $mail->isHTML(true);                                    //Set email format to HTML
-        $mail->Subject = $subject;
-        $mail->Body    = '<html><body>' . str_replace("||", "<br>", $message) . '</body></html>';
-
-        if(!$mail->send()) {
-            return false;
-        } else {
-            return true;
-        }
+        require_once('../helpers/symfony_mailer.php');
+            try {
+                $mailer->send($email);
+                return true;
+            } catch (TransportExceptionInterface $e) {
+                return false;
+            }
     } else if ( SMTP == "sendinblue" ) {
         //Load Composer's autoloader
         require_once('../vendor/autoload.php');
